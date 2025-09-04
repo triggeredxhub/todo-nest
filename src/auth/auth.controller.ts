@@ -1,7 +1,7 @@
 import { Controller,Post, Body, Res, Req, Get} from "@nestjs/common";
 import express from "express";
 import { AuthService } from "./auth.service";
-import { User } from "src/user/user.entity";
+
 
 
 @Controller('auth')
@@ -28,8 +28,25 @@ export class AuthController {
             }
         )
         return res.json({user})
-        
-        
+    }
+
+    @Post('logout')
+    async logout(@Req() res: express.Response) {
+        res.clearCookie('jwt');
+        return res.sendStatus(200);
+    }
+
+    @Get('me')
+    async me(@Req()req: express.Request){
+        const token = req.cookies['jwt'];
+        if(!token){
+            return {user: null};
+        }
+        const payload = await this.authService.verifyToken(token);
+        return {user: {
+            id: payload.sub,
+            username: payload.username
+        }};
     }
 
 }

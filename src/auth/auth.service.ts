@@ -36,4 +36,12 @@ async login(username: string , password: string) {
     return { token, user : { id: user.id , username: user.username } };
 
 }
+
+async verifyToken(token: string){
+    try {
+        return await this.jwtService.verifyAsync(token);
+    } catch (error) {
+        throw new Error('Invalid token');
+    }
+}
 }

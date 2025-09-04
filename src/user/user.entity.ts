@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Todo } from "../todo/todo.entity";
 
 @Entity()
 @Unique(['username'])
@@ -11,4 +12,9 @@ export class User {
 
     @Column()
     passwordHash: string;
+
+    @OneToMany(() => Todo, (Todo) => Todo.owner)
+    todos: Todo[]
+
+
 }
