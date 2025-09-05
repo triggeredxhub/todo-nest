@@ -1,6 +1,7 @@
 import { Controller,Post, Body, Res, Req, Get} from "@nestjs/common";
 import express from "express";
 import { AuthService } from "./auth.service";
+import { access } from "fs";
 
 
 
@@ -27,7 +28,7 @@ export class AuthController {
                 maxAge: 30 * 24 * 60 * 60 * 1000
             }
         )
-        return res.json({user})
+        return res.json({user, accessToken: token});
     }
 
     @Post('logout')
