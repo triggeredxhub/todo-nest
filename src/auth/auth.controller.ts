@@ -28,10 +28,11 @@ export class AuthController {
                 maxAge: 30 * 24 * 60 * 60 * 1000
             }
         )
-        return res.json({user, accessToken: token});
+        return res.json({user});
     }
 
     @Post('logout')
+
     async logout(@Req() res: express.Response) {
         res.clearCookie('jwt');
         return res.sendStatus(200);
