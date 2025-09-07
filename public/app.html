@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Todo App</title>
+</head>
+<body>
+  <h1>My Todo App</h1>
+  <form id="todoForm">
+    <input type="text" id="title" placeholder="Enter todo" />
+    <button type="submit">Add Todo</button>
+  </form>
+  <ul id="todoList"></ul>
+
+  <script>
+    async function loadTodos() {
+      const res = await fetch('/todo');
+      const todos = await res.json();
+      const list = document.getElementById('todoList');
+      list.innerHTML = todos.map(t => `<li>${t.title}</li>`).join('');
+    }
+
+    document.getElementById('todoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      await fetch('/todo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+      loadTodos();
+    });
+
+    loadTodos();
+  </script>
+</body>
+</html>
