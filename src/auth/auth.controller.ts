@@ -32,7 +32,6 @@ export class AuthController {
     }
 
     @Post('logout')
-
     async logout(@Req() res: express.Response) {
         res.clearCookie('jwt');
         return res.sendStatus(200);
