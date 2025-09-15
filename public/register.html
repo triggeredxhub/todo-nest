@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="/dist/styles.css">
+</head>
+
+<body>
+
+    <body class="bg-gray-50 text-gray-800 min-h-screen flex items-center justify-center">
+        <main class="w-full max-w-md bg-white shadow-md rounded-lg p-8">
+            <h1 class="text-2xl font-bold mb-6 text-center">Create an Account</h1>
+
+            <form id="registration-form" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" name="username" required
+                        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" name="password" required
+                        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                </div>
+
+                <button type="submit"
+                    class="w-full py-2 px-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-md shadow">
+                    Register
+                </button>
+            </form>
+
+            <p class="mt-6 text-center text-sm text-gray-500">&copy; 2023 My Website</p>
+        </main>
+    </body>
+
+
+    <script>
+        document.getElementById('registration-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+
+            const password = document.getElementById('password').value.trim();
+
+            const res = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (res.ok) {
+                alert('Registration successful! Please log in.');
+                window.location.href = '/index.html';
+            } else {
+                const errorData = await res.json();
+                alert('Registration failed: ' + errorData.message);
+            }
+        });
+    </script>
+</body>
+
+</html>
