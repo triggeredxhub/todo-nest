@@ -1,35 +1,194 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <title>Todo App</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Todo App — Tailwind UI</title>
+  <!-- Tailwind Play CDN (good for prototyping). Use your compiled CSS in production. -->
+  <link rel="stylesheet" href="/dist/styles.css">
 </head>
-<body>
-  <h1>My Todo App</h1>
-  <form id="todoForm">
-    <input type="text" id="title" placeholder="Enter todo" />
-    <button type="submit">Add Todo</button>
-  </form>
-  <ul id="todoList"></ul>
+<body class="min-h-screen bg-gray-50 text-gray-800">
+  <header class="max-w-2xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between">
+      <h1 class="text-4xl font-extrabold tracking-tight">My Todo App</h1>
+      <button id="logoutBtn" class="ml-4 inline-flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white rounded-md shadow-sm hover:bg-red-600">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-6">
+    <!-- Add task form -->
+    <form id="todoForm" class="flex gap-3 mb-6">
+      <input id="title" type="text" placeholder="Enter todo" class="flex-1 rounded-lg border border-gray-200 px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+      <button type="submit" class="px-5 py-3 rounded-lg bg-sky-600 text-white font-medium shadow hover:bg-sky-700">Add</button>
+    </form>
+
+    <!-- Todos container -->
+    <section id="todosContainer" class="space-y-3">
+      <!-- dynamic todo cards -->
+      <div id="emptyState" class="text-center text-gray-500 py-12 rounded-lg border border-dashed border-gray-200 bg-white">
+        Loading...
+      </div>
+    </section>
+  </main>
 
   <script>
-    async function loadTodos() {
-      const res = await fetch('/todo');
-      const todos = await res.json();
-      const list = document.getElementById('todoList');
-      list.innerHTML = todos.map(t => `<li>${t.title}</li>`).join('');
+    const API_BASE = ''; // leave empty if same origin (adjust if API hosted elsewhere, e.g. 'https://api.example.com')
+    const todosContainer = document.getElementById('todosContainer');
+    const emptyState = document.getElementById('emptyState');
+    const titleInput = document.getElementById('title');
+
+    // Render a single todo card
+    function renderTodoCard(todo) {
+      // container
+      const card = document.createElement('div');
+      card.className = 'flex items-center justify-between bg-white rounded-lg border border-gray-200 px-4 py-3 shadow-sm';
+
+      // left: checkbox + text
+      const left = document.createElement('label');
+      left.className = 'flex items-center gap-4 cursor-pointer';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = !!todo.done;
+      checkbox.className = 'w-5 h-5 rounded-md border-gray-300';
+      checkbox.addEventListener('change', () => toggleDone(todo.id, checkbox.checked, titleEl));
+
+      const titleEl = document.createElement('span');
+      titleEl.textContent = todo.title;
+      titleEl.className = 'text-lg font-medium';
+
+      if (todo.done) {
+        titleEl.classList.add('line-through', 'text-gray-400');
+      }
+
+      left.appendChild(checkbox);
+      left.appendChild(titleEl);
+
+      // right: delete button
+      const right = document.createElement('div');
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
+
+      right.appendChild(deleteBtn);
+
+      card.appendChild(left);
+      card.appendChild(right);
+
+      return card;
     }
 
+    // Load todos from server
+    async function loadTodos() {
+      try {
+        const res = await fetch(API_BASE + '/todo', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch todos');
+        const todos = await res.json();
+
+        todosContainer.innerHTML = ''; // clear
+        if (!todos || todos.length === 0) {
+          const el = document.createElement('div');
+          el.className = 'text-center text-gray-500 py-8 rounded-lg border border-dashed border-gray-200 bg-white';
+          el.innerHTML = '<p class="text-lg">You have no tasks 👌</p><p class="text-sm mt-2 text-gray-400">Add your first todo using the input above.</p>';
+          todosContainer.appendChild(el);
+          return;
+        }
+
+        // Build list
+        const list = document.createElement('div');
+        list.className = 'space-y-3';
+        todos.forEach(t => {
+          list.appendChild(renderTodoCard(t));
+        });
+        todosContainer.appendChild(list);
+      } catch (err) {
+        todosContainer.innerHTML = '<div class="text-red-500">Unable to load todos</div>';
+        console.error(err);
+      }
+    }
+
+    // Create todo
     document.getElementById('todoForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const title = document.getElementById('title').value;
-      await fetch('/todo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
-      });
-      loadTodos();
+      const title = titleInput.value.trim();
+      if (!title) return;
+
+      // optimistically clear input
+      titleInput.value = '';
+      try {
+        await fetch(API_BASE + '/todo', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+        await loadTodos();
+      } catch (err) {
+        console.error('Failed to create todo', err);
+      }
     });
 
+    // Delete todo
+    async function deleteTodo(id) {
+      if (!confirm('Delete this task?')) return;
+      try {
+        await fetch(API_BASE + '/todo/' + encodeURIComponent(id), {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        await loadTodos();
+      } catch (err) {
+        console.error('Delete failed', err);
+      }
+    }
+
+    // Toggle done status (PATCH)
+    async function toggleDone(id, done, titleEl) {
+      // quick UI update
+      if (done) {
+        titleEl.classList.add('line-through', 'text-gray-400');
+      } else {
+        titleEl.classList.remove('line-through', 'text-gray-400');
+      }
+
+      try {
+        await fetch(API_BASE + '/todo/' + encodeURIComponent(id), {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ done })
+        });
+        // optionally reload to get fresh ordering/state: await loadTodos();
+      } catch (err) {
+        console.error('Failed to update status', err);
+        // revert UI if failed
+        if (done) {
+          titleEl.classList.remove('line-through', 'text-gray-400');
+        } else {
+          titleEl.classList.add('line-through', 'text-gray-400');
+        }
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await fetch(API_BASE + '/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+      } catch (err) {
+        console.error('Logout failed', err);
+      } finally {
+        window.location.href = '/index.html';
+      }
+    });
+
+    // Initial load
     loadTodos();
   </script>
 </body>
